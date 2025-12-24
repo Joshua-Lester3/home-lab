@@ -13,9 +13,11 @@ terraform {
 }
 
 provider "proxmox" {
-  # Configuration options
+  endpoint   = var.proxmox_endpoint
+  api_token  = var.proxmox_api_key
+  insecure   = true
 }
 
 provider "talos" {
-  # more config
+  # config
 }

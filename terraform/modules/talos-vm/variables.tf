@@ -48,3 +48,15 @@ variable "passthrough_igpu" {
   type        = bool
   default     = false
 }
+
+variable "proxmox_endpoint" {
+  description = "Endpoint for proxmox service"
+  type        = string
+  sensitive   = true
+}
+
+variable "proxmox_api_key" {
+  description = "Endpoint for proxmox service"
+  type        = string
+  sensitive   = true
+}
