@@ -1,0 +1,24 @@
+{
+  "name": "Homelab Automation",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "hashicorp.terraform",
+        // "redhat.ansible",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        // "tamasfe.even-better-toml",
+        // "signageos.signageos-vscode-sops",
+        "siderolabs.talos-vscode"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "workspaceFolder": "/workspace",
+  "remoteUser": "vscode"
+}

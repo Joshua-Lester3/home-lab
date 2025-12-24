@@ -1,0 +1,49 @@
+version: '3'
+
+tasks:
+  spin-vms:
+    desc: "Provisions VMs in Proxmox using Terraform"
+    dir: terraform/modules/talos-vm
+    cmds:
+      - terraform init
+      - terraform apply -auto-approve -var-file="../../variables/env.tfvars" -var-file="../../variables/secrets.tfvars"
+
+  bootstrap-talos:
+    desc: "Bootstraps the Talos Cluster"
+    vars:
+     CP_IP:
+       sh: cd terraform/modules/talos-vm && terraform output -raw controlplane_ip
+    cmds:
+      - task: generate-config
+      - task: apply-config
+      - task: bootstrap-etcd
+      - task: fetch-kubeconfig
+
+  generate-config:
+    desc: "Generates Talos machine config and patches it"
+    vars:
+     CP_IP:
+       sh: cd terraform/modules/talos-vm && terraform output -raw controlplane_ip
+    cmds:
+      - talosctl gen config "homelab-cluster" "https://{{.CP_IP}}:6443" --output-dir _out --install-disk /dev/sda --force
+      # merge patches?
+
+  apply-config:
+    desc: "Applies config to nodes"
+    vars:
+      CP_IP:
+        sh: cd ../terraform/modules/talos-vm && terraform output -raw controlplane_ip
+    dir: _out
+    cmds:
+      # You would loop through Terraform outputs here to apply configs
+      - talosctl apply-config --insecure --nodes "{{.CP_IP}}" --file controlplane.yaml
+
+  bootstrap-etcd:
+    desc: "Bootstraps the first control plane node"
+    cmds:
+      - talosctl bootstrap --nodes <CP_IP> 
+
+  fetch-kubeconfig:
+    desc: "Downloads admin kubeconfig"
+    cmds:
+      - talosctl kubeconfig --nodes <CP_IP> --endpoints <CP_IP> ./kubeconfig

@@ -11,13 +11,13 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   memory {
     dedicated = var.memory_mb
   }
-  
+
   agent {
     enabled = true
   }
 
   cdrom {
-    file_id   = proxmox_virtual_environment_download_file.talos_iso.id
+    file_id = proxmox_virtual_environment_download_file.talos_iso.id
   }
 
   disk {
@@ -44,8 +44,8 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   #   }
   # }
 
-  boot_order = ["ide3", "scsi0"] 
-  
+  boot_order = ["scsi0", "ide3"]
+
   operating_system {
     type = "l26"
   }
@@ -56,7 +56,16 @@ resource "proxmox_virtual_environment_download_file" "talos_iso" {
   content_type = "iso"
   datastore_id = "local"
   node_name    = var.target_node
-  
-  url          = "https://factory.talos.dev/image/${talos_image_factory_schematic.this.id}/${var.talos_version}/${var.platform}.iso"
-  file_name    = "talos-${var.talos_version}-${var.platform}.iso"
+
+  url       = "https://factory.talos.dev/image/${talos_image_factory_schematic.this.id}/${var.talos_version}/${var.platform}.iso"
+  file_name = "talos-${var.talos_version}-${var.platform}.iso"
+
+  overwrite_unmanaged = true
+
+  lifecycle {
+    create_before_destroy = true
+    ignore_changes = [
+      checksum
+    ]
+  }
 }

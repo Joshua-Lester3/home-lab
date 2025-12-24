@@ -18,27 +18,26 @@ RUN curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /u
     && echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list \
     && apt-get update && apt-get install -y terraform
 
-# Install Ansible (Host Configuration)
+# Install Ansible
 # We use pipx to isolate ansible dependencies
 # RUN pip3 install --break-system-packages ansible
 
-# Install Talosctl (OS Management)
+# Install Talosctl
 RUN curl -Lo /usr/local/bin/talosctl https://github.com/siderolabs/talos/releases/download/${TALOSCTL_VERSION}/talosctl-linux-amd64 \
     && chmod +x /usr/local/bin/talosctl
 
-# Install Kubectl (Cluster Management)
+# Install Kubectl
 RUN curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
     && install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
-# Install ArgoCD CLI (GitOps Management)
+# Install ArgoCD CLI
 # RUN curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-amd64 \
 #     && chmod +x /usr/local/bin/argocd
 
-# Install Task (Orchestration Replacement for Makefile)
-# RUN sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin ${TASK_VERSION}
+# Install Task
+RUN sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin ${TASK_VERSION}
 
 # (Optional) Install SOPS/Age for Secret Management
-# While not explicitly listed, this is standard for "GitOps Maturity"
 # RUN curl -LO https://github.com/getsops/sops/releases/download/v3.9.0/sops-v3.9.0.linux.amd64 \
 #     && mv sops-v3.9.0.linux.amd64 /usr/local/bin/sops && chmod +x /usr/local/bin/sops
 

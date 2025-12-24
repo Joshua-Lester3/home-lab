@@ -9,4 +9,7 @@
 # Secret patterns
 **/secrets.tfvars
 
+# Talos output
+_out/**
+
 # Misc
