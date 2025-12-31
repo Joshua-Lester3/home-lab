@@ -4,3 +4,19 @@ output "controlplane_ip" {
     ip if startswith(ip, "192.168")
   ], 0)
 }
+
+output "talos_installer_image" {
+    value = format(
+        "factory.talos.dev/installer/%s:%s",
+        regex("https://factory.talos.dev/image/([^/]+)/([^/]+)/.*", proxmox_virtual_environment_download_file.talos_iso.url)[0],
+        regex("https://factory.talos.dev/image/([^/]+)/([^/]+)/.*", proxmox_virtual_environment_download_file.talos_iso.url)[1]
+    )
+}
+
+output "hi" {
+    value = talos_image_factory_schematic.this.schematic
+}
+
+output "hi2" {
+    value = talos_image_factory_schematic.this.id
+}

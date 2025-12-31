@@ -9,7 +9,7 @@ ARG TASK_VERSION="v3.45.5"
 # Install system dependencies
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
-    curl unzip git software-properties-common gnupg \ 
+    curl unzip git software-properties-common gnupg iputils-ping \ 
     # recommended: python3-pip python3-venv \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 

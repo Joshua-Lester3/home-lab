@@ -14,6 +14,9 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
 
   agent {
     enabled = true
+    wait_for_ip {
+      ipv4 = true
+    }
   }
 
   cdrom {

@@ -34,7 +34,7 @@ variable "disk_size" {
 variable "talos_version" {
   description = "Talos version for filename consistency"
   type        = string
-  default     = "v1.9.0"
+  default     = "v1.12.0"
 }
 
 variable "platform" {

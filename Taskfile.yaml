@@ -1,6 +1,18 @@
 version: '3'
 
 tasks:
+  full-stack:
+    desc: "Does it all"
+    cmds:
+      - task: spin-vms
+      - task: bootstrap-talos
+
+  nuke-tf:
+    desc: "Destroys VMs in Proxmox using Terraform"
+    dir: terraform/modules/talos-vm
+    cmds:
+      - terraform destroy -refresh=false -auto-approve -var-file="../../variables/env.tfvars" -var-file="../../variables/secrets.tfvars"
+
   spin-vms:
     desc: "Provisions VMs in Proxmox using Terraform"
     dir: terraform/modules/talos-vm
@@ -16,17 +28,20 @@ tasks:
     cmds:
       - task: generate-config
       - task: apply-config
-      - task: bootstrap-etcd
-      - task: fetch-kubeconfig
+      # - task: bootstrap-etcd
+      # - task: fetch-kubeconfig
 
   generate-config:
     desc: "Generates Talos machine config and patches it"
     vars:
-     CP_IP:
-       sh: cd terraform/modules/talos-vm && terraform output -raw controlplane_ip
+      CP_IP:
+        sh: cd terraform/modules/talos-vm && terraform output -raw controlplane_ip
+      TALOS_INSTALLER_IMAGE:
+        sh: cd terraform/modules/talos-vm && terraform output -raw talos_installer_image
     cmds:
-      - talosctl gen config "homelab-cluster" "https://{{.CP_IP}}:6443" --output-dir _out --install-disk /dev/sda --force
-      # merge patches?
+      - talosctl gen config "homelab-cluster" "https://{{.CP_IP}}:6443" --install-image factory.talos.dev/nocloud-installer/e3fab82b561b5e559cdf1c0b1e5950c0e52700b9208a2cfaa5b18454796f3a7e:v1.12.0 --install-disk /dev/sda --force --config-patch @patch.yaml --output-dir _out
+      - talosctl config endpoint "https://{{.CP_IP}}:6443" --talosconfig _out/talosconfig
+      - talosctl config node "{{.CP_IP}}" --talosconfig _out/talosconfig
 
   apply-config:
     desc: "Applies config to nodes"
@@ -35,15 +50,22 @@ tasks:
         sh: cd ../terraform/modules/talos-vm && terraform output -raw controlplane_ip
     dir: _out
     cmds:
-      # You would loop through Terraform outputs here to apply configs
-      - talosctl apply-config --insecure --nodes "{{.CP_IP}}" --file controlplane.yaml
+      - talosctl apply-config --insecure --nodes "{{.CP_IP}}" --file controlplane.yaml --talosconfig ./talosconfig
 
   bootstrap-etcd:
     desc: "Bootstraps the first control plane node"
+    dir: _out
+    vars:
+      CP_IP:
+        sh: cd ../terraform/modules/talos-vm && terraform output -raw controlplane_ip
     cmds:
-      - talosctl bootstrap --nodes <CP_IP> 
+      - talosctl bootstrap --nodes {{.CP_IP}} --endpoints {{.CP_IP}} --talosconfig "./talosconfig"
 
   fetch-kubeconfig:
     desc: "Downloads admin kubeconfig"
+    dir: _out
+    vars:
+      CP_IP:
+        sh: cd ../terraform/modules/talos-vm && terraform output -raw controlplane_ip
     cmds:
-      - talosctl kubeconfig --nodes <CP_IP> --endpoints <CP_IP> ./kubeconfig
+      - talosctl kubeconfig --nodes {{.CP_IP}} --endpoints {{.CP_IP}} --talosconfig ./talosconfig
