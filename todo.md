@@ -9,9 +9,12 @@ it'd be nice:
 - combine this whole setup into one pipeline, that I can run with one command
 - gitops/argocd/etc :3
 
+- clean this up :)
+
 current:
 
 - can somewhat spin up a proxmox machine quickly with scripts (mine and https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/post-pve-install.sh)
+  - `bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/tools/pve/post-pve-install.sh)"`
   - test this when home
 - automated adding a basic talos vm through terraform. dont fully understand all the best practices around proxmox vm's and automating this
--
+- have taskfile pipeline to bootstrap the single node cluster (working on combining)

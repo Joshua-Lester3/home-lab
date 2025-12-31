@@ -5,7 +5,9 @@ tasks:
     desc: "Does it all"
     cmds:
       - task: spin-vms
+      - rm _out -rf
       - task: bootstrap-talos
+      - echo "Give it 1-3 minutes for the cluster to be functional..."
 
   nuke-tf:
     desc: "Destroys VMs in Proxmox using Terraform"
@@ -28,8 +30,8 @@ tasks:
     cmds:
       - task: generate-config
       - task: apply-config
-      # - task: bootstrap-etcd
-      # - task: fetch-kubeconfig
+      - task: bootstrap-etcd
+      - task: fetch-kubeconfig
 
   generate-config:
     desc: "Generates Talos machine config and patches it"
@@ -50,7 +52,16 @@ tasks:
         sh: cd ../terraform/modules/talos-vm && terraform output -raw controlplane_ip
     dir: _out
     cmds:
-      - talosctl apply-config --insecure --nodes "{{.CP_IP}}" --file controlplane.yaml --talosconfig ./talosconfig
+      - |
+        # Check if node is already bootstrapped (has TLS certs)
+        if talosctl version --nodes "{{.CP_IP}}" --endpoints "{{.CP_IP}}" --talosconfig ./talosconfig &>/dev/null; then
+          echo "Node already bootstrapped, applying config with talosconfig..."
+          talosctl apply-config --nodes "{{.CP_IP}}" --file controlplane.yaml --talosconfig ./talosconfig
+        else
+          echo "First time bootstrap, applying config with --insecure..."
+          talosctl apply-config --insecure --nodes "{{.CP_IP}}" --file controlplane.yaml --talosconfig ./talosconfig
+          sleep 60
+        fi
 
   bootstrap-etcd:
     desc: "Bootstraps the first control plane node"
@@ -68,4 +79,4 @@ tasks:
       CP_IP:
         sh: cd ../terraform/modules/talos-vm && terraform output -raw controlplane_ip
     cmds:
-      - talosctl kubeconfig --nodes {{.CP_IP}} --endpoints {{.CP_IP}} --talosconfig ./talosconfig
+      - talosctl kubeconfig ./kubeconfig --nodes {{.CP_IP}} --endpoints {{.CP_IP}} --talosconfig ./talosconfig
