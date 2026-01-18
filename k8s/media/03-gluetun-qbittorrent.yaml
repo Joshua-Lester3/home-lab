@@ -1,0 +1,117 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gluetun-qbittorrent
+  namespace: media
+  labels:
+    app: gluetun-qbittorrent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gluetun-qbittorrent
+  template:
+    metadata:
+      labels:
+        app: gluetun-qbittorrent
+    spec:
+      containers:
+        # Gluetun VPN container - all traffic routes through this
+        - name: gluetun
+          image: qmcgaw/gluetun:latest
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - NET_RAW
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: "nordvpn"
+            - name: VPN_TYPE
+              value: "wireguard"
+            - name: WIREGUARD_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nordvpn-credentials
+                  key: PRIVATE_KEY
+            - name: SERVER_COUNTRIES
+              value: "Canada"
+            - name: SERVER_CITIES
+              value: "Vancouver"
+            # - name: WIREGUARD_ADDRESSES
+            #   value: "10.5.0.2./32"
+            - name: TZ
+              value: "America/New_York"
+          ports:
+            - containerPort: 8080
+              name: qbit-web
+              protocol: TCP
+            - containerPort: 6881
+              name: qbit-tcp
+              protocol: TCP
+            - containerPort: 6881
+              name: qbit-udp
+              protocol: UDP
+          volumeMounts:
+            - name: tun-device
+              mountPath: /dev/net/tun
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "500m"
+            limits:
+              memory: "512Mi"
+              cpu: "1000m"
+
+        # qBittorrent container - shares network with Gluetun
+        - name: qbittorrent
+          image: linuxserver/qbittorrent:latest
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "America/New_York"
+            - name: WEBUI_PORT
+              value: "8080"
+          volumeMounts:
+            - name: storage
+              mountPath: /config
+              subPath: config/qbittorrent
+            - name: storage
+              mountPath: /downloads
+              subPath: downloads
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1500m"
+
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: media-storage-pvc
+        - name: tun-device
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gluetun-qbittorrent
+  namespace: media
+spec:
+  type: NodePort
+  selector:
+    app: gluetun-qbittorrent
+  ports:
+    - name: qbit-web
+      port: 8080
+      targetPort: 8080
+      nodePort: 30080
+      protocol: TCP

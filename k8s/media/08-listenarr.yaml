@@ -1,0 +1,81 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: listenarr
+  namespace: media
+  labels:
+    app: listenarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: listenarr
+  template:
+    metadata:
+      labels:
+        app: listenarr
+    spec:
+      containers:
+        - name: listenarr
+          image: ghcr.io/therobbiedavis/listenarr:canary
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "America/New_York"
+          ports:
+            - containerPort: 5000
+              name: http
+              protocol: TCP
+          volumeMounts:
+            - name: storage
+              mountPath: /app/config
+              subPath: config/listenarr
+            - name: storage
+              mountPath: /audiobooks
+              subPath: media/audiobooks
+            - name: storage
+              mountPath: /downloads
+              subPath: downloads
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "100m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 120
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 60
+            periodSeconds: 10
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: media-storage-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: listenarr
+  namespace: media
+spec:
+  type: NodePort
+  selector:
+    app: listenarr
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
+      nodePort: 30787
+      protocol: TCP

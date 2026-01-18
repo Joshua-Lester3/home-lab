@@ -1,0 +1,16 @@
+apiVersion: kustomize.build/v1beta1
+kind: Kustomization
+
+namespace: media
+
+resources:
+  - 00-storage.yaml
+  - 01-init-dirs.yaml
+  - 02-vpn-secret.yaml
+  - 03-gluetun-qbittorrent.yaml
+  - 04-prowlarr.yaml
+  - 04a-flaresolverr.yaml
+  - 05-radarr.yaml
+  - 06-jellyfin.yaml
+  - 07-audiobookshelf.yaml
+  - 08-listenarr.yaml

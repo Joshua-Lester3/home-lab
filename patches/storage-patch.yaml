@@ -1,0 +1,9 @@
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: storage
+provisioning:
+  diskSelector:
+    match: disk.dev_path == '/dev/sdb'
+  minSize: 100GiB
+filesystem:
+  type: xfs 

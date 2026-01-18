@@ -1,0 +1,87 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jellyfin
+  namespace: media
+  labels:
+    app: jellyfin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jellyfin
+  template:
+    metadata:
+      labels:
+        app: jellyfin
+    spec:
+      containers:
+        - name: jellyfin
+          image: linuxserver/jellyfin:latest
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "America/New_York"
+            # Disable hardware transcoding for now (enable later with GPU)
+            - name: JELLYFIN_FFmpeg__hardwareAccelerationType
+              value: ""
+          ports:
+            - containerPort: 8096
+              name: http
+              protocol: TCP
+            - containerPort: 8920
+              name: https
+              protocol: TCP
+          volumeMounts:
+            - name: storage
+              mountPath: /config
+              subPath: config/jellyfin
+            - name: storage
+              mountPath: /data/movies
+              subPath: media/movies
+            - name: storage
+              mountPath: /transcodes
+              subPath: transcodes
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "4Gi"
+              cpu: "4000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8096
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8096
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: media-storage-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jellyfin
+  namespace: media
+spec:
+  type: NodePort
+  selector:
+    app: jellyfin
+  ports:
+    - name: http
+      port: 8096
+      targetPort: 8096
+      nodePort: 30096
+      protocol: TCP

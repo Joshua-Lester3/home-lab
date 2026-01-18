@@ -79,4 +79,6 @@ tasks:
       CP_IP:
         sh: cd ../terraform/modules/talos-vm && terraform output -raw controlplane_ip
     cmds:
-      - talosctl kubeconfig ./kubeconfig --nodes {{.CP_IP}} --endpoints {{.CP_IP}} --talosconfig ./talosconfig
+      - mkdir ~/.kube
+      - talosctl kubeconfig ~/.kube/config --nodes {{.CP_IP}} --endpoints {{.CP_IP}} --talosconfig ./talosconfig
+      - echo "alias k=kubectl" >> ~/.${SHELL##*/}rc && source ~/.${SHELL##*/}rc

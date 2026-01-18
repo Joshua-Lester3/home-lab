@@ -1,0 +1,44 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-media-dirs
+  namespace: media
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: init-dirs
+          image: busybox:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              mkdir -p /storage/media/movies
+              mkdir -p /storage/media/audiobooks
+              mkdir -p /storage/media/podcasts
+              mkdir -p /storage/downloads/complete
+              mkdir -p /storage/downloads/incomplete
+              mkdir -p /storage/config/jellyfin
+              mkdir -p /storage/config/radarr
+              mkdir -p /storage/config/prowlarr
+              mkdir -p /storage/config/qbittorrent
+              mkdir -p /storage/config/audiobookshelf
+              mkdir -p /storage/config/audiobookshelf/metadata
+              mkdir -p /storage/config/listenarr
+              mkdir -p /storage/transcodes
+              chown -R 1000:1000 /storage
+              echo "Directories created successfully:"
+              ls -la /storage
+              ls -la /storage/media
+              ls -la /storage/downloads
+              ls -la /storage/config
+          volumeMounts:
+            - name: storage
+              mountPath: /storage
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: media-storage-pvc
